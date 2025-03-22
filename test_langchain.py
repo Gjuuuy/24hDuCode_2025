@@ -40,27 +40,21 @@ class MistralLLM(LLM):
             prompt_with_instructions = f"""
             {prompt}
             
-            INSTRUCTIONS STRICTES :
-            1. Choisissez UNE SEULE option :
-            - Soit une Action avec son Action Input
-            - Soit une Final Answer
-            2. N'incluez JAMAIS les deux dans la même réponse
-            3. Utilisez le format exact :
-            Thought: votre raisonnement
-            Action: nom de l'action
-            Action Input: entrée de l'action
-            OU
-            Thought: votre raisonnement 
-            Final Answer: votre réponse définitive
+            INSTRUCTIONS :
+            1. Utilisez EXCLUSIVEMENT l'un des deux formats suivants :
 
-            Exemple valide 1 :
-            Thought: Je dois obtenir plus d'informations
-            Action: Spa API
-            Action Input: "liste des spas"
+            A) Pour utiliser un outil :
+                Thought: Je dois utiliser un outil pour répondre.
+                Action: Nom de l'outil
+                Action Input: Entrée pour l'outil
 
-            Exemple valide 2 :
-            Thought: J'ai toutes les informations nécessaires
-            Final Answer: Il y a 3 spas.
+            B) Pour donner une réponse finale :
+                Thought: J'ai la réponse.
+                Final Answer: La réponse.
+
+            2. NE COMBINEZ JAMAIS ces formats.
+
+            3. Soyez bref et précis.
             """
             
             time.sleep(1) 
@@ -95,11 +89,10 @@ mistral_llm = MistralLLM()
 # Fonction pour interroger l'API des restaurants avec le token
 def get_restaurants(query: str):
     api_url = "https://app-584240518682.europe-west9.run.app/api/restaurants/"
-    params = {"query": query}
     headers = {
         "Authorization": f"Token {hotel_api_token}"
     }
-    response = requests.get(api_url, params=params, headers=headers)
+    response = requests.get(api_url, headers=headers)
     if response.status_code == 200:
         # On attend un JSON contenant une clé 'data'
         return response.json()  
@@ -108,11 +101,10 @@ def get_restaurants(query: str):
 
 def get_spas(query: str):
     api_url = "https://app-584240518682.europe-west9.run.app/api/spas/"
-    params = {"search": query}
     headers = {
         "Authorization": f"Token {hotel_api_token}"
         }
-    response = requests.get(api_url, params=params, headers=headers)
+    response = requests.get(api_url, headers=headers)
     if response.status_code == 200:
         return response.json() 
     
@@ -161,7 +153,7 @@ def interact_with_user(user_message: str):
     return response
 
 # Exemple d'interaction
-user_message = "Donne moi les noms des restaurants qui sont ouverts à 12:00"
+user_message = "Est ce qu'il fait beau aujourd'hui ?"
 response = interact_with_user(user_message)
 print(response)
 
