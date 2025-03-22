@@ -1,2 +1,4 @@
 # Fichier .gitignore
 .env
+
+.idea/
