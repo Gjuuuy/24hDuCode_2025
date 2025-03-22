@@ -19,6 +19,7 @@ model = ChatMistralAI(
     max_retries=5
 )
 
+
 @tool
 def get_restaurants():
     """Get All Restaurants"""
@@ -34,6 +35,7 @@ def get_restaurants():
     else:
         return None
 
+
 @tool
 def get_spas():
     """Get All Spas"""
@@ -42,31 +44,25 @@ def get_spas():
     api_url = "https://app-584240518682.europe-west9.run.app/api/spas/"
     headers = {
         "Authorization": f"Token {hotel_api_token}"
-        }
+    }
     response = requests.get(api_url, headers=headers)
     if response.status_code == 200:
-        return response.json() 
-    
+        return response.json()
+
     else:
         return None
-    
+
 @tool
-def search_duckduckgo():
-    """Search the Web"""
+def search_duckduckgo(search: str):
+    """Search on the Web"""
     name: str = "api_duckduckgo"
-    description: str = "Search the web"
-    api_url = "https://api.duckduckgo.com/"
-    params = {
-        "format": "json",
-        "no_html": 1,
-        "skip_disambig": 1,
-    }
-    response = requests.get(api_url, params=params)
+    description: str = "Search on the web"
+    api_url = f"http://api.duckduckgo.com/?q={search}&format=json"
+    response = requests.get(api_url)
     if response.status_code == 200:
         data = response.json()
         return data.get("AbstractText", "Aucune information trouvée.")
     return "Erreur lors de la recherche."
-
 
 
 tools = [get_restaurants, get_spas, search_duckduckgo]
@@ -76,6 +72,7 @@ from langgraph.prebuilt import create_react_agent
 
 graph = create_react_agent(model, tools=tools)
 
+
 def print_stream(stream):
     for s in stream:
         message = s["messages"][-1]
@@ -84,5 +81,6 @@ def print_stream(stream):
         else:
             message.pretty_print()
 
-inputs = {"messages": [("user", "quelle est la temperature aujourd'hui ?")]}
+
+inputs = {"messages": [("user", "Quelle est la météo d'aujourd'hui ?")]}
 print_stream(graph.stream(inputs, stream_mode="values"))
