@@ -1,4 +1,6 @@
 import os
+import time
+
 import requests
 from dotenv import load_dotenv
 # MISTRAL EXAMPLE
@@ -82,5 +84,19 @@ def print_stream(stream):
             message.pretty_print()
 
 
-inputs = {"messages": [("user", "Quelle est la météo d'aujourd'hui ?")]}
-print_stream(graph.stream(inputs, stream_mode="values"))
+
+
+inputs = {"messages": [("user", "Quel est le restaurant qui ouvre le plus tôt ?")]}
+reussi = False
+iteration = 0
+max_iteration = 5
+while(not reussi and iteration < max_iteration):
+    try:
+        print_stream(graph.stream(inputs, stream_mode="values"))
+        reussi = True
+    except:
+        print("tentative raté")
+        iteration += 1
+        time.sleep(1)
+
+
