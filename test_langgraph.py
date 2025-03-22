@@ -65,21 +65,6 @@ def get_restaurants():
     else:
         return None
 
-@tool
-def get_client(id: int):
-    """Get Informations on a client"""
-    name: str = "api_client"
-    description: str = "Get Informations on a client"
-    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/{id}/"
-    headers = {
-        "Authorization": f"Token {hotel_api_token}"
-    }
-    response = requests.get(api_url, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return None
-
 
 @tool
 def get_spas():
@@ -114,6 +99,81 @@ def get_meals():
         return None
 
 @tool
+def get_reservation_by_id_reservation(id: int):
+    """Get Informations on a reservation by id reservation"""
+    name: str = "api_reservation_reservation"
+    description: str = "Get Informations on a reservation by id reservation"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/{id}/"
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
+def get_reservation_by_id_client(id: int):
+    """Get Informations on a reservation by id client"""
+    name: str = "api_reservation_client"
+    description: str = "Get Informations on a reservation by id client"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/?client={id}"
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
+def get_client_by_id(id: int):
+    """Get Informations on a client by id client"""
+    name: str = "api_client_by_id"
+    description: str = "Get Informations on a client by id client"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/{id}/"
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
+def get_client_by_search(search: str):
+    """Get Informations on a client by search"""
+    name: str = "api_client_search"
+    description: str = "Get Informations on a client by search"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/?search={search}"
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
+def get_schema():
+    """Get OpenApi3 schema for this API of https://app-584240518682.europe-west9.run.app/api/"""
+    name: str = "api_schema"
+    description: str = "Get OpenApi3 schema for this API of https://app-584240518682.europe-west9.run.app/api/"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/{id}/"
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
 def search_duckduckgo(search: str):
     """Search on the Web"""
     name: str = "api_duckduckgo"
@@ -127,7 +187,7 @@ def search_duckduckgo(search: str):
 
 
 
-tools = [get_restaurants, get_spas, get_meals, get_client, search_duckduckgo]
+tools = [get_restaurants, get_spas, get_meals, get_client_by_id, get_client_by_search, get_reservation_by_id_reservation, get_reservation_by_id_client, get_schema, search_duckduckgo]
 
 # Définir le graphe
 from langgraph.prebuilt import create_react_agent
