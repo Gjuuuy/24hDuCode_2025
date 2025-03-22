@@ -23,12 +23,54 @@ model = ChatMistralAI(
 )
 
 
+def print_stream(stream):
+    reponse = ""
+    for s in stream:
+        message: HumanMessage = s["messages"][-1]
+        if isinstance(message, tuple):
+            print(message)
+        else:
+            reponse = message.content
+            message.pretty_print()
+    return reponse
+
+def api_ask_agent(user_message: str):
+    inputs = {"messages":["user",user_message]}
+    reponse = ""
+    reussi = False
+    iteration = 0
+    max_iteration = 5
+    while (not reussi and iteration < max_iteration):
+        try:
+            reponse = print_stream(graph.stream(inputs, stream_mode="values"))
+            reussi = True
+        except:
+            print("tentative raté")
+            iteration += 1
+            time.sleep(1)
+    return reponse
+
 @tool
 def get_restaurants():
     """Get All Restaurants"""
     name: str = "api_restaurants"
     description: str = "Get All Restaurants"
     api_url = "https://app-584240518682.europe-west9.run.app/api/restaurants/"
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
+def get_client(id: int):
+    """Get Informations on a client"""
+    name: str = "api_client"
+    description: str = "Get Informations on a client"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/{id}/"
     headers = {
         "Authorization": f"Token {hotel_api_token}"
     }
@@ -84,40 +126,13 @@ def search_duckduckgo(search: str):
     return "Erreur lors de la recherche."
 
 
-tools = [get_restaurants, get_spas, get_meals, search_duckduckgo]
+
+tools = [get_restaurants, get_spas, get_meals, get_client, search_duckduckgo]
 
 # Définir le graphe
 from langgraph.prebuilt import create_react_agent
 
 graph = create_react_agent(model, tools=tools)
-
-
-def print_stream(stream):
-    reponse = ""
-    for s in stream:
-        message: HumanMessage = s["messages"][-1]
-        if isinstance(message, tuple):
-            print(message)
-        else:
-            reponse = message.content
-            message.pretty_print()
-    return reponse
-
-def api_ask_agent(user_message: str):
-    inputs = {"messages":["user",user_message]}
-    reponse = ""
-    reussi = False
-    iteration = 0
-    max_iteration = 5
-    while (not reussi and iteration < max_iteration):
-        try:
-            reponse = print_stream(graph.stream(inputs, stream_mode="values"))
-            reussi = True
-        except:
-            print("tentative raté")
-            iteration += 1
-            time.sleep(1)
-    return reponse
 
 if __name__ == "__main__":
     inputs = {"messages": [("user", "Quels sont les menus proposés ?")]}
