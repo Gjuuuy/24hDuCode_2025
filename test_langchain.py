@@ -1,13 +1,11 @@
 import os
+import time
 from click import prompt
 import requests
 from dotenv import load_dotenv
 from langchain.agents import Tool, initialize_agent, AgentType
 from langchain.llms.base import LLM
 from mistralai import Mistral
-#from langchain.utilities import PythonREPL
-
-
 
 
 # Charger les variables depuis .env
@@ -30,11 +28,9 @@ class MistralLLM(LLM):
 
     def _clean_response(self, response: str) -> str:
         if "Final Answer:" in response:
-            return response.split("Final Answer:")[1].strip()
+            return "Final Answer:" + response.split("Final Answer:")[1].strip()
         elif "Action:" in response:
-            action_part = response.split("Action:")[1]
-            action_input_part = action_part.split("Action Input:")[1]
-            return f"Action:{action_part.split('Action Input:')[0].strip()}\nAction Input:{action_input_part.strip()}"
+            return "Action:" + response.split("Action:")[1].strip()
         else:
             return response
     
@@ -44,30 +40,45 @@ class MistralLLM(LLM):
             prompt_with_instructions = f"""
             {prompt}
             
-            IMPORTANT: When you respond, follow this EXACT format:
-            Thought: (reflect on what you need to do)
-            Action: (choose ONE tool from the available tools, nothing else)
-            Action Input: (provide the input for the chosen tool)
-            
-            After receiving an Observation, continue with:
-            Thought: (reflect on the observation)
-            
-            Only use 'Final Answer:' when you're ready to provide the complete, final response.
+            INSTRUCTIONS STRICTES :
+            1. Choisissez UNE SEULE option :
+            - Soit une Action avec son Action Input
+            - Soit une Final Answer
+            2. N'incluez JAMAIS les deux dans la même réponse
+            3. Utilisez le format exact :
+            Thought: votre raisonnement
+            Action: nom de l'action
+            Action Input: entrée de l'action
+            OU
+            Thought: votre raisonnement 
+            Final Answer: votre réponse définitive
+
+            Exemple valide 1 :
+            Thought: Je dois obtenir plus d'informations
+            Action: Spa API
+            Action Input: "liste des spas"
+
+            Exemple valide 2 :
+            Thought: J'ai toutes les informations nécessaires
+            Final Answer: Il y a 3 spas.
             """
             
+            time.sleep(1) 
             chat_response = client.chat.complete(
                 model="mistral-large-latest",
                 messages=[{"role": "user", "content": prompt_with_instructions}],
                 max_tokens=1000,
-                temperature=0.1  # Réduire la température pour des réponses plus déterministes
+                temperature=0.3  # Réduire la température pour des réponses plus déterministes
             )
             response_text = chat_response.choices[0].message.content
 
             # Nettoyage post-traitement si nécessaire
             if "For troubleshooting" in response_text:
                 response_text = response_text.split("For troubleshooting")[0].strip() 
-            return self._clean_response(response_text)
-
+            cleaned_response = self._clean_response(response_text)
+            if not ("Final Answer:" in cleaned_response or "Action:" in cleaned_response):
+                return "Final Answer: Désolé, je n'ai pas pu formater ma réponse correctement."
+            return cleaned_response
             
         except Exception as e:
             print(f"Erreur lors de l'appel à Mistral API: {e}")
@@ -138,7 +149,7 @@ agent = initialize_agent(
     tools, 
     llm=mistral_llm, 
     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION, 
-    #max_iterations=5,  # Limite cruciale
+    max_iterations=5,  # Limite cruciale
     early_stopping_method="generate",
     verbose=True,
     handle_parsing_errors=True
@@ -150,6 +161,10 @@ def interact_with_user(user_message: str):
     return response
 
 # Exemple d'interaction
-user_message = "Combien de spas y a-t-il ?"
+user_message = "Donne moi les noms des restaurants qui sont ouverts à 12:00"
 response = interact_with_user(user_message)
 print(response)
+
+#user_message_1 = "Combien de restaurants y a-t-il ?"
+#response_1 = interact_with_user(user_message_1)
+#print(response_1)
