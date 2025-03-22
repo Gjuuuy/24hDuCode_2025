@@ -55,6 +55,22 @@ def get_spas():
         return None
 
 @tool
+def get_meals():
+    """Get All Meals"""
+    name: str = "api_meals"
+    description: str = "Get All Meals"
+    api_url = "https://app-584240518682.europe-west9.run.app/api/meals/"
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+
+    else:
+        return None
+
+@tool
 def search_duckduckgo(search: str):
     """Search on the Web"""
     name: str = "api_duckduckgo"
@@ -67,7 +83,7 @@ def search_duckduckgo(search: str):
     return "Erreur lors de la recherche."
 
 
-tools = [get_restaurants, get_spas, search_duckduckgo]
+tools = [get_restaurants, get_spas, get_meals, search_duckduckgo]
 
 # Définir le graphe
 from langgraph.prebuilt import create_react_agent
@@ -86,7 +102,7 @@ def print_stream(stream):
 
 
 
-inputs = {"messages": [("user", "Quel est le restaurant qui ouvre le plus tôt ?")]}
+inputs = {"messages": [("user", "Quels sont les menus proposés ?")]}
 reussi = False
 iteration = 0
 max_iteration = 5
