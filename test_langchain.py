@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from langchain.agents import Tool, initialize_agent, AgentType
 from langchain.llms.base import LLM
 from mistralai import Mistral
+#from langchain.utilities import PythonREPL
+
 
 
 
@@ -26,6 +28,16 @@ class MistralLLM(LLM):
     def _llm_type(self) -> str:
         return "mistral"
 
+    def _clean_response(self, response: str) -> str:
+        if "Final Answer:" in response:
+            return response.split("Final Answer:")[1].strip()
+        elif "Action:" in response:
+            action_part = response.split("Action:")[1]
+            action_input_part = action_part.split("Action Input:")[1]
+            return f"Action:{action_part.split('Action Input:')[0].strip()}\nAction Input:{action_input_part.strip()}"
+        else:
+            return response
+    
     def _call(self, prompt: str, stop=None) -> str:
         try:
             # Instructions claires pour Mistral
@@ -50,11 +62,12 @@ class MistralLLM(LLM):
                 temperature=0.1  # Réduire la température pour des réponses plus déterministes
             )
             response_text = chat_response.choices[0].message.content
-            
+
             # Nettoyage post-traitement si nécessaire
             if "For troubleshooting" in response_text:
                 response_text = response_text.split("For troubleshooting")[0].strip() 
-            return response_text
+            return self._clean_response(response_text)
+
             
         except Exception as e:
             print(f"Erreur lors de l'appel à Mistral API: {e}")
@@ -82,6 +95,19 @@ def get_restaurants(query: str):
     else:
         return None
 
+def get_spas(query: str):
+    api_url = "https://app-584240518682.europe-west9.run.app/api/spas/"
+    params = {"search": query}
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+        }
+    response = requests.get(api_url, params=params, headers=headers)
+    if response.status_code == 200:
+        return response.json() 
+    
+    else:
+        return None
+
 # Outil LangChain pour interroger Mistral (on peut l'utiliser en complément ou pour d'autres usages)
 def ask_mistral(query: str) -> str:
     return mistral_llm._call(query)
@@ -98,12 +124,22 @@ restaurant_tool = Tool(
     description="Calls the restaurant API to get a list of restaurants based on a query"
 )
 
+spa_tool = Tool(
+    name="Spa API",
+    func=get_spas,
+    description="Recherche des centres de spa"
+) 
+
+
+
 # Initialiser l'agent LangChain avec les outils et le modèle Mistral
-tools = [mistral_tool, restaurant_tool]
+tools = [mistral_tool, restaurant_tool, spa_tool]
 agent = initialize_agent(
     tools, 
     llm=mistral_llm, 
     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION, 
+    #max_iterations=5,  # Limite cruciale
+    early_stopping_method="generate",
     verbose=True,
     handle_parsing_errors=True
 )
@@ -114,6 +150,6 @@ def interact_with_user(user_message: str):
     return response
 
 # Exemple d'interaction
-user_message = "donne moi le nom des restaurants"
+user_message = "Combien de spas y a-t-il ?"
 response = interact_with_user(user_message)
 print(response)
