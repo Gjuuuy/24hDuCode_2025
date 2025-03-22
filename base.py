@@ -127,8 +127,68 @@ def get_meals():
         return None
 
 @tool
+def post_reservation(id_client: int, id_restaurant: int, date: str, id_meal: str, number_of_guests: int, special_requests: str):
+    """Post a reservation into the database
+
+    Args:
+        id_client (int): L'ID du client.
+        id_restaurant (int): L'ID du restaurant.
+        date (str): Date de la réservation au format YYYY-MM-DD.
+        id_meal (str): L'ID du repas.
+        number_of_guests (int): Nombre de convives.
+        special_requests (str, optional): Demandes spéciales. Par défaut "".
+
+    Returns:
+        dict | None: Les informations de la réservation ou None si erreur.
+    """
+    name: str = "api_post_reservation"
+    description: str = "Post a reservation into the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/"
+    json = {
+        "client": id_client,
+        "restaurant": id_restaurant,
+        "date": date,
+        "meal": id_meal,
+        "number_of_guests": number_of_guests,
+        "special_requests": special_requests
+    }
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.post(api_url, json=json, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
 def get_reservation_by_id_reservation(id: int):
-    """Get Informations on a reservation by id reservation"""
+    """
+    Récupère les informations d'une réservation spécifique à partir de son identifiant.
+
+    Args:
+        id (int): L'identifiant unique de la réservation.
+
+    Returns:
+        dict | None: Un dictionnaire contenant les détails de la réservation si la requête réussit (statut 200),
+                     sinon `None` en cas d'erreur ou si la réservation n'existe pas.
+
+    Exemples:
+        >>> get_reservation_by_id_reservation(123)
+        {
+            "id": 123,
+            "client": 45,
+            "restaurant": 12,
+            "date": "2025-03-23",
+            "meal": 7,
+            "number_of_guests": 2,
+            "special_requests": "Table avec vue"
+        }
+
+    Remarque:
+        - L'API requiert une authentification avec un token.
+        - Si l'ID fourni ne correspond à aucune réservation, la fonction retournera `None`.
+    """
     name: str = "api_reservation_reservation"
     description: str = "Get Informations on a reservation by id reservation"
     api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/{id}/"
@@ -143,7 +203,44 @@ def get_reservation_by_id_reservation(id: int):
 
 @tool
 def get_reservation_by_id_client(id: int):
-    """Get Informations on a reservation by id client"""
+    """
+    Récupère les informations sur les réservations d'un client spécifique à partir de son identifiant.
+
+    Args:
+        id (int): L'identifiant unique du client.
+
+    Returns:
+        list[dict] | None: Une liste de dictionnaires contenant les détails des réservations du client si la requête réussit (statut 200),
+                            sinon `None` en cas d'erreur ou si aucune réservation n'est trouvée.
+
+    Exemples:
+        >>> get_reservation_by_id_client(45)
+        [
+            {
+                "id": 123,
+                "client": 45,
+                "restaurant": 12,
+                "date": "2025-03-23",
+                "meal": 7,
+                "number_of_guests": 2,
+                "special_requests": "Table avec vue"
+            },
+            {
+                "id": 124,
+                "client": 45,
+                "restaurant": 15,
+                "date": "2025-04-02",
+                "meal": 3,
+                "number_of_guests": 4,
+                "special_requests": "Anniversaire"
+            }
+        ]
+
+    Remarque:
+        - L'API requiert une authentification avec un token.
+        - Si l'ID fourni ne correspond à aucun client ayant des réservations, la fonction retournera `None`.
+        - Cette requête peut retourner plusieurs réservations si le client en possède plusieurs.
+    """
     name: str = "api_reservation_client"
     description: str = "Get Informations on a reservation by id client"
     api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/?client={id}"
@@ -157,8 +254,80 @@ def get_reservation_by_id_client(id: int):
         return None
 
 @tool
+def post_client(name_client: str, phone_number: str, room_number: str, special_requests: str):
+    """
+    Ajoute un nouveau client dans la base de données de l'hôtel.
+
+    Args:
+        name_client (str): Le nom complet du client.
+        phone_number (str): Le numéro de téléphone du client.
+        room_number (str): Le numéro de la chambre attribuée au client.
+        special_requests (str): Toute demande spécifique formulée par le client.
+
+    Returns:
+        dict | None: Un dictionnaire contenant les informations du client ajouté si la requête réussit (statut 200),
+                     sinon `None` en cas d'erreur.
+
+    Exemples:
+        >>> post_client("Jean Dupont", "+33612345678", "205", "Oreillers supplémentaires")
+        {
+            "id": 1,
+            "name": "Jean Dupont",
+            "phone_number": "+33612345678",
+            "room_number": "205",
+            "special_requests": "Oreillers supplémentaires"
+        }
+
+    Remarque:
+        - L'API requiert une authentification avec un token.
+        - Assurez-vous que les informations du client sont correctes avant d'envoyer la requête.
+        - En cas d'échec de la requête (ex: problème réseau, données invalides), la fonction retournera `None`.
+    """
+    name: str = "api_post_client"
+    description: str = "Post a client into the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/"
+    json = {
+        "name": name_client,
+        "phone_number": phone_number,
+        "room_number": room_number,
+        "special_requests": special_requests
+    }
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.post(api_url, json=json, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
 def get_client_by_id(id: int):
-    """Get Informations on a client by id client"""
+    """
+    Récupère les informations d'un client à partir de son identifiant unique.
+
+    Args:
+        id (int): L'identifiant du client à rechercher.
+
+    Returns:
+        dict | None: Un dictionnaire contenant les informations du client si la requête réussit (statut 200),
+                     sinon `None` en cas d'erreur.
+
+    Exemples:
+        >>> get_client_by_id(42)
+        {
+            "id": 42,
+            "name": "Alice Martin",
+            "phone_number": "+33698765432",
+            "room_number": "302",
+            "special_requests": "Vue sur la mer"
+        }
+
+    Remarque:
+        - L'API requiert une authentification avec un token.
+        - Assurez-vous que l'ID fourni est valide et existe dans la base de données.
+        - En cas d'échec de la requête (ex: ID inexistant, problème réseau), la fonction retournera `None`.
+    """
     name: str = "api_client_by_id"
     description: str = "Get Informations on a client by id client"
     api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/{id}/"
@@ -173,7 +342,31 @@ def get_client_by_id(id: int):
 
 @tool
 def get_client_by_search(search: str):
-    """Get Informations on a client by search"""
+    """
+    Récupère les informations d'un client à partir de spécificité comme le nom du client.
+
+    Args:
+        search (str): spécificité comme le nom du client à rechercher.
+
+    Returns:
+        dict | None: Un dictionnaire contenant les informations du client si la requête réussit (statut 200),
+                     sinon `None` en cas d'erreur.
+
+    Exemples:
+        >>> get_client_by_search("George Dupont")
+        {
+          "id": 1535,
+          "name": "Georges Dupont",
+          "phone_number": "1234567890",
+          "room_number": "101",
+          "special_requests": "None"
+        }
+
+    Remarque:
+        - L'API requiert une authentification avec un token.
+        - Assurez-vous que l'ID fourni est valide et existe dans la base de données.
+        - En cas d'échec de la requête (ex: ID inexistant, problème réseau), la fonction retournera `None`.
+    """
     name: str = "api_client_search"
     description: str = "Get Informations on a client by search"
     api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/?search={search}"
@@ -213,7 +406,9 @@ def search_duckduckgo(search: str):
         return data.get("AbstractText", "Aucune information trouvée.")
     return "Erreur lors de la recherche."
 
-tools = [get_restaurants, get_spas, get_meals, get_client_by_id, get_client_by_search, get_reservation_by_id_reservation, get_reservation_by_id_client, get_schema, search_duckduckgo]
+
+
+tools = [get_restaurants, get_spas, get_meals, post_client, get_client_by_id, get_client_by_search, post_reservation, get_reservation_by_id_reservation, get_reservation_by_id_client, get_schema, search_duckduckgo]
 
 
 # Définir le graphe
