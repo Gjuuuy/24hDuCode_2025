@@ -3,6 +3,7 @@ import time
 
 import requests
 from dotenv import load_dotenv
+from langchain_core.messages import HumanMessage
 # MISTRAL EXAMPLE
 from langchain_mistralai import ChatMistralAI
 from langchain_core.tools import tool
@@ -92,27 +93,44 @@ graph = create_react_agent(model, tools=tools)
 
 
 def print_stream(stream):
+    reponse = ""
     for s in stream:
-        message = s["messages"][-1]
+        message: HumanMessage = s["messages"][-1]
         if isinstance(message, tuple):
             print(message)
         else:
+            reponse = message.content
             message.pretty_print()
+    return reponse
 
+def api_ask_agent(user_message: str):
+    inputs = {"messages":["user",user_message]}
+    reponse = ""
+    reussi = False
+    iteration = 0
+    max_iteration = 5
+    while (not reussi and iteration < max_iteration):
+        try:
+            reponse = print_stream(graph.stream(inputs, stream_mode="values"))
+            reussi = True
+        except:
+            print("tentative raté")
+            iteration += 1
+            time.sleep(1)
+    return reponse
 
-
-
-inputs = {"messages": [("user", "Quels sont les menus proposés ?")]}
-reussi = False
-iteration = 0
-max_iteration = 5
-while(not reussi and iteration < max_iteration):
-    try:
-        print_stream(graph.stream(inputs, stream_mode="values"))
-        reussi = True
-    except:
-        print("tentative raté")
-        iteration += 1
-        time.sleep(1)
+if __name__ == "__main__":
+    inputs = {"messages": [("user", "Quels sont les menus proposés ?")]}
+    reussi = False
+    iteration = 0
+    max_iteration = 5
+    while(not reussi and iteration < max_iteration):
+        try:
+            print_stream(graph.stream(inputs, stream_mode="values"))
+            reussi = True
+        except:
+            print("tentative raté")
+            iteration += 1
+            time.sleep(1)
 
 
