@@ -104,7 +104,7 @@ def post_reservation(id_client: int, id_restaurant: int, date: str, id_meal: str
     name: str = "api_post_reservation"
     description: str = "Post a reservation into the database"
     api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/"
-    data = {
+    json = {
         "client": id_client,
         "restaurant": id_restaurant,
         "date": date,
@@ -115,7 +115,7 @@ def post_reservation(id_client: int, id_restaurant: int, date: str, id_meal: str
     headers = {
         "Authorization": f"Token {hotel_api_token}"
     }
-    response = requests.post(api_url, data=data, headers=headers)
+    response = requests.post(api_url, json=json, headers=headers)
     if response.status_code == 200:
         return response.json()
     else:
