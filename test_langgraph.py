@@ -99,6 +99,29 @@ def get_meals():
         return None
 
 @tool
+def post_reservation(id_client: int, id_restaurant: int, date: str, id_meal: str, number_of_guests: int, special_requests: str):
+    """Post a reservation into the database"""
+    name: str = "api_post_reservation"
+    description: str = "Post a reservation into the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/"
+    data = {
+        "client": id_client,
+        "restaurant": id_restaurant,
+        "date": date,
+        "meal": id_meal,
+        "number_of_guests": number_of_guests,
+        "special_requests": special_requests
+    }
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.post(api_url, data=data, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
 def get_reservation_by_id_reservation(id: int):
     """Get Informations on a reservation by id reservation"""
     name: str = "api_reservation_reservation"
@@ -123,6 +146,27 @@ def get_reservation_by_id_client(id: int):
         "Authorization": f"Token {hotel_api_token}"
     }
     response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+@tool
+def post_client(name_client: str, phone_number: str, room_number: str, special_requests: str):
+    """Post a client into the database"""
+    name: str = "api_post_client"
+    description: str = "Post a client into the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/"
+    json = {
+        "name": name_client,
+        "phone_number": phone_number,
+        "room_number": room_number,
+        "special_requests": special_requests
+    }
+    headers = {
+        "Authorization": f"Token {hotel_api_token}"
+    }
+    response = requests.post(api_url, json=json, headers=headers)
     if response.status_code == 200:
         return response.json()
     else:
@@ -187,7 +231,7 @@ def search_duckduckgo(search: str):
 
 
 
-tools = [get_restaurants, get_spas, get_meals, get_client_by_id, get_client_by_search, get_reservation_by_id_reservation, get_reservation_by_id_client, get_schema, search_duckduckgo]
+tools = [get_restaurants, get_spas, get_meals, post_client, get_client_by_id, get_client_by_search, post_reservation, get_reservation_by_id_reservation, get_reservation_by_id_client, get_schema, search_duckduckgo]
 
 # Définir le graphe
 from langgraph.prebuilt import create_react_agent
@@ -198,7 +242,7 @@ if __name__ == "__main__":
     inputs = {"messages": [("user", "Quels sont les menus proposés ?")]}
     reussi = False
     iteration = 0
-    max_iteration = 5
+    max_iteration = 10
     while(not reussi and iteration < max_iteration):
         try:
             print_stream(graph.stream(inputs, stream_mode="values"))
