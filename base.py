@@ -1,6 +1,7 @@
 import os
 import time
 import sys
+import re
 
 import requests
 from dotenv import load_dotenv
@@ -34,6 +35,10 @@ def print_stream(stream):
         else:
             reponse = message.content
             # Ne pas afficher les messages avec pretty_print
+            message.pretty_print()
+
+    reponse = re.sub(r"\[\{.*?\}\]", "", reponse)
+
     return reponse
 
 def api_ask_agent(user_message: str, conversation_history=None, system_instruction=None):
@@ -320,6 +325,69 @@ def get_meals():
     else:
         return None
 
+
+@tool
+def put_reservation(id_reservation: int, id_client: int, id_restaurant: int, date: str, id_meal: str,
+                    number_of_guests: int, special_requests: str):
+    """
+    Met à jour les informations d'une réservation existante dans la base de données de l'hôtel
+
+    Args:
+        id_reservation: Identifiant unique de la réservation à modifier
+        id_client: Identifiant du client associé à la réservation
+        id_restaurant: Identifiant du restaurant concerné
+        date: Date de la réservation (format attendu: YYYY-MM-DD)
+        id_meal: Identifiant du repas ou du service réservé
+        number_of_guests: Nombre de personnes pour la réservation
+        special_requests: Demandes particulières ou commentaires associés à la réservation
+
+    Returns:
+        Les données de la réservation mises à jour en cas de succès,
+        ou un dictionnaire contenant les détails de l'erreur en cas d'échec
+    """
+    name: str = "api_put_reservation"
+    description: str = "Put a reservation into the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/{id_reservation}/"
+    json_data = {
+        "client": id_client,
+        "restaurant": id_restaurant,
+        "date": date,
+        "meal": id_meal,
+        "number_of_guests": number_of_guests,
+        "special_requests": special_requests
+    }
+    headers = {"Authorization": f"Token {hotel_api_token}"}
+    response = requests.put(api_url, json=json_data, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": f"Failed to update reservation: {response.status_code}", "details": response.text}
+
+
+@tool
+def delete_reservation(id_reservation: int):
+    """
+    Supprime une réservation de la base de données de l'hôtel
+
+    Args:
+        id_reservation: Identifiant unique de la réservation à supprimer
+
+    Returns:
+        Un dictionnaire avec un message de confirmation en cas de succès,
+        ou un dictionnaire contenant les détails de l'erreur en cas d'échec
+    """
+    name: str = "api_delete_reservation"
+    description: str = "Delete a reservation from the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/reservations/{id_reservation}/"
+    headers = {"Authorization": f"Token {hotel_api_token}"}
+    response = requests.delete(api_url, headers=headers)
+
+    if response.status_code == 204:
+        return {"message": "Reservation successfully deleted"}
+    else:
+        return {"error": f"Failed to delete reservation: {response.status_code}", "details": response.text}
+
+
 @tool
 def post_reservation(id_client: int, id_restaurant: int, date: str, id_meal: str, number_of_guests: int, special_requests: str):
     """Post a reservation into the database
@@ -447,6 +515,63 @@ def get_reservation_by_id_client(id: int):
     else:
         return None
 
+
+@tool
+def put_client(id_client: int, name_client: str, phone_number: str, room_number: str, special_requests: str):
+    """
+    Met à jour les informations d'un client existant dans la base de données de l'hôtel
+
+    Args:
+        id_client: Identifiant unique du client à modifier
+        name_client: Nom complet du client
+        phone_number: Numéro de téléphone du client
+        room_number: Numéro de chambre attribué au client
+        special_requests: Demandes particulières ou commentaires associés au client
+
+    Returns:
+        Les données du client mises à jour en cas de succès, None en cas d'échec
+    """
+    name: str = "api_put_client"
+    description: str = "Put a client into the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/{id_client}/"
+    json = {
+        "name": name_client,
+        "phone_number": phone_number,
+        "room_number": room_number,
+        "special_requests": special_requests
+    }
+    headers = {"Authorization": f"Token {hotel_api_token}"}
+    response = requests.put(api_url, json=json, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+
+@tool
+def delete_client(id_client: int):
+    """
+    Supprime un client de la base de données de l'hôtel
+
+    Args:
+        id_client: Identifiant unique du client à supprimer
+
+    Returns:
+        Un dictionnaire avec un message de confirmation en cas de succès,
+        ou un dictionnaire contenant les détails de l'erreur en cas d'échec
+    """
+    name: str = "api_delete_client"
+    description: str = "Delete a client from the database"
+    api_url = f"https://app-584240518682.europe-west9.run.app/api/clients/{id_client}/"
+    headers = {"Authorization": f"Token {hotel_api_token}"}
+    response = requests.delete(api_url, headers=headers)
+
+    if response.status_code == 204:
+        return {"message": "Client successfully deleted"}
+    else:
+        return {"error": f"Failed to delete client: {response.status_code}", "details": response.text}
+
+
 @tool
 def post_client(name_client: str, phone_number: str, room_number: str, special_requests: str):
     """
@@ -459,7 +584,7 @@ def post_client(name_client: str, phone_number: str, room_number: str, special_r
         special_requests (str): Toute demande spécifique formulée par le client.
 
     Returns:
-        dict | None: Un dictionnaire contenant les informations du client ajouté si la requête réussit (statut 200),
+        str | None: null si la requête réussit (statut 200),
                      sinon `None` en cas d'erreur.
 
     Exemples:
@@ -598,11 +723,28 @@ def search_duckduckgo(search: str):
     if response.status_code == 200:
         data = response.json()
         return data.get("AbstractText", "Aucune information trouvée.")
+    elif response.status_code == 202:
+        print("Requête acceptée, en attente du traitement...")
+
+        # Supposons que l'API nous donne une URL pour suivre le statut
+        status_url = response.headers.get("Location", "http://api.duckduckgo.com/?q={search}&format=json")
+
+        # Vérification périodique (Polling)
+        for _ in range(5):  # On essaie 5 fois
+            time.sleep(60)  # Attendre 5 secondes avant de vérifier
+            statut_response = requests.get(status_url)
+
+            if statut_response.status_code == 200:  # Si la tâche est terminée
+                print("Traitement terminé :", statut_response.json())
+                break
+
+    print(f"erreur {response.status_code} with search : {search}")
+    print(response.json())
     return "Erreur lors de la recherche."
 
 
 
-tools = [get_restaurants, get_spas, get_meals, post_client, get_client_by_id, get_client_by_search, post_reservation, get_reservation_by_id_reservation, get_reservation_by_id_client, get_schema, search_duckduckgo]
+tools = [get_restaurants, get_spas, get_meals, put_client, delete_client, post_client, get_client_by_id, get_client_by_search, put_reservation, delete_reservation, post_reservation, get_reservation_by_id_reservation, get_reservation_by_id_client, get_schema, search_duckduckgo]
 
 
 # Définir le graphe
